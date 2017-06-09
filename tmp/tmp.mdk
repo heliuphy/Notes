@@ -1,0 +1,481 @@
+Package:[UTF8]ctex
+Title         : 插值程序题
+Author        : 何乐林
+Logo          : False
+
+[TITLE]
+
+# Runge函数
+## Newton插值
+### 结果与分析
+![test1]
+
+[test1]: images/test1.png "test1" { width:auto; max-width:90% }
+
+由上图可以看出，
+等距节点的高次Newton插值，在靠近边界附近，误差非常大，出现Runge现象。
+
+主要原因是被插值函数的任意阶导数不能达到一致有界，插值多项式不能收敛到被插值函数。
+
+### MATLAB程序
+
+```
+% 1-(1) Runge函数的20次牛顿插值
+clc;clear;
+x=[-1:0.1:1];
+y = 1./(1+25*x.^2)
+N(:,1)=y'; 
+for j=2:21      
+    for k=j:21         
+        N(k,j)=(N(k,j-1)-N(k-1,j-1))/(x(k)-x(k-j+1));      
+    end 
+end 
+for t=1:21
+c(t)=N(t,t)
+end
+% 插值
+f=N(1,1); 
+syms z
+for k=2:21 
+    a=1; 
+    for r=1:(k-1) 
+        a=a*(z-x(r)); 
+    end 
+    f=f+N(k,k)*a; 
+end
+
+a=[-1:0.001:1];
+n2=length(a);
+for i=1:n2
+    b(i)=1/(1+25*a(i)*a(i));
+end
+fx=subs(f,z,a);
+plot(a,b,'k',a,fx,'r');
+title('Runge函数的20次Newton插值');
+legend('Runge','Newton插值');
+```
+
+## Lagrange插值
+### 结果与分析
+![test2]
+
+[test2]: images/test2.png "test2" { width:auto; max-width:90% }
+
+由上图可知，用chebyshev零点作为插值节点，
+将会消去Runge现象。
+使用Chebyshev多项式零点构造的Lagrange插值多项式比较接近原函数。
+
+
+### MATLAB程序
+```
+% 1-(2) Runge函数的20次Lagrange插值
+clc;clear;
+for i=1:21
+    x(i)=cos((2*(i-1)+1)*pi/42);
+end
+y=1./(1+25*x.^2)
+temp=1;
+n=length(x);
+syms z;
+for i=1:n
+    lx=1;
+    for j=1:n
+        if i~=j
+            temp=(z-x(j))/(x(i)-x(j));
+            lx=lx*temp;
+        end        
+    end
+    l(i)=lx;
+end
+l=l';
+L=y*l;
+%作图
+a=[-1:0.01:1];
+n=length(a);
+for i=1:n
+    b(i)=1/(1+25*a(i)*a(i));
+end
+fx=subs(L,z,a);
+plot(a,b,'k',a,fx,'r');
+title('Runge函数的20次Lagrange插值');
+legend('Runge','Lagrange插值');
+```
+
+## 分段线性插值
+### 结果与分析
+![test3]
+
+[test3]: images/test3.png "test3" { width:auto; max-width:90% }
+
+由上图可知，采用分段低次多项式插值，为线性插值时，节点处不光滑。
+但是，分段线性插值多项式比较接近原函数，没有出现Runge现象。
+
+### MATLAB程序
+```
+% 1-(3) Runge函数的20次分段线性插值
+clc;clear;
+x=[-1:0.1:1];
+syms z
+for i=1:21
+    y(i)=1/(1+25*x(i)*x(i));
+end
+for i=1:20
+    l(i)=(z-x(i+1))/(x(i)-x(i+1))*y(i)+(z-x(i))/(x(i+1)-x(i))*y(i+1)
+%   l(i)=y(i)+(y(i+1)-y(i))/(x(i+1)-x(i))*(z-x(i))
+end
+
+a=[-1:0.001:1];
+n2=length(a);
+for i=1:n2
+    b(i)=1/(1+25*a(i)*a(i));
+end
+plot(a,b,'k');
+hold on;
+
+for i=1:20
+    a=[x(i):0.01:x(i+1)];
+    f=subs(l(i),z,a)
+    plot(a,f,'-- r')
+    hold on
+end
+
+title('Runge函数的20次分段线性插值');
+legend('Runge','分段线性插值');
+```
+
+## 三次自然样条插值
+### 结果与分析
+![test4]
+
+[test4]: images/test4.png "test4" { width:auto; max-width:90% }
+由上图可知，采用三次样条插值，可得到更光滑的曲线。
+得到的函数十分接近被插值函数。
+### MATLAB程序
+```
+clc;clear;
+x=[-1:0.1:1];
+n=length(x);
+syms z;
+for i=1:n
+    y(i)=1/(1+25*x(i)*x(i));
+end
+for i=1:n-1
+h(i)=x(i+1)-x(i);
+end
+for i=1:n-2
+u(i)=h(i)/(h(i+1)+h(i));
+r(i)=1-u(i);
+end
+G=zeros(n,n);
+for i=1:n
+    G(i,i)=2;
+end
+for i=2:n-1
+    G(i,i-1)=u(i-1);
+    G(i,i+1)=r(i-1);
+end
+G(n,n-1)=1;
+G(1,2)=1;
+d=zeros(1,n);
+for i=2:n-1
+    d(i)=6*((y(i+1)-y(i))/h(i)-(y(i)-y(i-1))/h(i-1))/(h(i)+h(i-1));
+end
+syms u v;
+u=diff(1/(1+25*v*v),v);
+a=subs(u,v,x(1));
+b=subs(u,v,x(n));
+d(1)=((y(2)-y(1))/h(1)-a)/h(1)*6;
+d(n)=(b-(y(n)-y(n-1))/h(n-1))/h(n-1)*6;
+d=d';
+M=inv(G)*d;
+
+aa=[-1:0.001:1];
+n2=length(aa);
+for i=1:n2
+    bb(i)=1/(1+25*aa(i)*aa(i));
+end
+plot(aa,bb,'k');
+hold on;
+
+for i=1:n-1
+    s(i)=M(i)*(x(i+1)-z)^3/0.6+M(i+1)*(z-x(i))^3/0.6+(y(i)-M(i)*0.01/6)*(x(i+1)-z)/0.1+(y(i+1)-M(i+1)*0.01/6)*(z-x(i))/0.1;
+end
+for i=1:n-1
+    a=[x(i):0.01:x(i+1)];
+    f=subs(s(i),z,a);
+    plot(a,f,'* r')
+    hold on
+end
+title('Runge函数的20次三次自然样条插值');
+legend('Runge','三次自然样条插值');
+```
+
+
+
+# 分段函数
+
+## 牛顿插值
+### 结果与分析
+![test5]
+
+[test5]: images/test5.png "test5" { width:auto; max-width:90% }
+
+由上图可知，在整个区间上，插值都不是特别吻合原函数，出现了Runge现象。
+### MATLAB程序
+```
+% 2-(1) Runge函数的20次牛顿插值
+clc;clear;
+x=[-1:0.1:1];
+for i=1:10
+    y(i)=sin(pi*x(i));
+end
+for i=11:15
+    y(i)=cos(pi*x(i));
+end
+for i=15:21
+    y(i)=0;
+end
+N(:,1)=y'; 
+for j=2:21      
+    for k=j:21         
+        N(k,j)=(N(k,j-1)-N(k-1,j-1))/(x(k)-x(k-j+1));      
+    end 
+end 
+for t=1:21
+c(t)=N(t,t);
+end
+% 插值
+
+f=N(1,1); 
+syms z;
+for k=2:21 
+    a=1; 
+    for r=1:(k-1) 
+        a=a*(z-x(r)); 
+    end 
+    f=f+N(k,k)*a; 
+end
+% 图1
+subplot(2,1,1);
+v1=linspace(-1,0,50);
+u1=sin(pi*v1);
+plot(v1,u1,'k');
+hold on;
+v2=linspace(0,0.5,50);
+u2=cos(pi*v2);
+plot(v2,u2,'k');
+hold on;
+v3=linspace(0.5,1,50);
+u3=0*v3;
+plot(v3,u3,'k');
+hold on;
+a=[-1:0.001:1];
+fx=subs(f,z,a);
+plot(a,fx,'r');
+title('分段函数的20次Newton插值-总括');
+legend('原函数','Newton插值');
+% 图2
+subplot(2,1,2);
+v4=linspace(-0.3,0,50);
+u4=sin(pi*v4);
+plot(v4,u4,'k');
+hold on;
+v5=linspace(0,0.3,50);
+u5=cos(pi*v5);
+plot(v5,u5,'k');
+hold on;
+a=[-0.3:0.001:0.3];
+fx=subs(f,z,a);
+plot(a,fx,'r');
+title('分段函数的20次Newton插值-分段点');
+legend('原函数','Newton插值');
+```
+## Lagrange插值
+### 结果与分析
+![test6]
+
+[test6]: images/test6.png "test6" { width:auto; max-width:90% }
+由上图可知，用chebyshev零点作为插值节点，
+将会消去Runge现象。
+### MATLAB程序
+```
+% 2-(2) 分段函数的20次Lagrange插值
+clc;clear;
+
+xx=[-1:0.1:1];
+for i=1:10
+    yy(i)=sin(pi*xx(i));
+end
+for i=11:15
+    yy(i)=cos(pi*xx(i));
+end
+for i=15:21
+    yy(i)=0;
+end
+
+for i=1:21
+    x(i)=cos((2*(i-1)+1)*pi/42);
+end
+
+y=zeros(1,21);
+for i=1:21
+    if x(i)<0
+     y(i)=sin(pi*x(i));
+    elseif x(i)>0.5
+       y(i)=0;
+    else 
+       y(i)=cos(pi*x(i));
+    end
+end
+plot(xx,yy,'k');
+hold on;
+
+syms z;
+temp=1;
+for i=1:21
+    lx=1;
+    for j=1:21
+        if i~=j
+            temp=(z-x(j))/(x(i)-x(j));
+            lx=lx*temp;
+        end        
+    end
+    l(i)=lx;
+end
+l=l';
+L=y*l;
+a=[-1:0.01:1];
+fx=subs(L,z,a);
+plot(a,fx,'r');
+hold on;
+title('分段函数的20次Lagrange插值');
+legend('原函数','Lagrange插值');
+```
+## 分段线性插值插值
+### 结果与分析
+![test7]
+
+[test7]: images/test7.png "test7" { width:auto; max-width:90% }
+由上图可知，分段线性插值多项式比较接近原函数，没有出现Runge现象。
+但是在间断点处及导数不存在的点误差较大。
+
+### MATLAB程序
+```
+clc;clear;
+
+xx=[-1:0.1:1];
+for i=1:10
+    yy(i)=sin(pi*xx(i));
+end
+for i=11:15
+    yy(i)=cos(pi*xx(i));
+end
+for i=15:21
+    yy(i)=0;
+end
+plot(xx,yy,'k');
+hold on;
+
+x=[-1:0.1:1];
+n=21;
+syms z;
+for i=1:10
+    y(i)=sin(pi*x(i));
+end
+for i=11:15
+    y(i)=cos(pi*x(i));
+end
+for i=15:21
+    y(i)=0;
+end
+for i=1:20
+    l(i)=(z-x(i+1))/(x(i)-x(i+1))*y(i)+(z-x(i))/(x(i+1)-x(i))*y(i+1);
+end
+for i=1:20
+    a=[x(i):0.01:x(i+1)];
+    f=subs(l(i),z,a);
+    plot(a,f,'x r')
+    hold on
+end
+title('分段函数的20次分段线性插值');
+legend('原函数','分段线性插值');
+```
+## 三次自然样条插值插值
+### 结果与分析
+![test8]
+
+[test8]: images/test8.png "test8" { width:auto; max-width:90% }
+由上图可知，分段线性插值多项式比较接近原函数，没有出现Runge现象。
+但是三次样条插值函数在间断点处也有较大误差。
+### MATLAB程序
+```
+clc;clear;
+
+xx=[-1:0.1:1];
+for i=1:10
+    yy(i)=sin(pi*xx(i));
+end
+for i=11:15
+    yy(i)=cos(pi*xx(i));
+end
+for i=15:21
+    yy(i)=0;
+end
+plot(xx,yy,'k');
+hold on;
+
+x=[-1:0.1:1];
+syms z
+for i=1:10
+    y(i)=sin(pi*x(i));
+end
+for i=11:15
+    y(i)=cos(pi*x(i));
+end
+for i=15:21
+    y(i)=0;
+end
+ 
+for i=1:20
+h(i)=x(i+1)-x(i);
+end
+for i=1:19
+u(i)=h(i)/(h(i+1)+h(i));
+r(i)=1-u(i);
+end
+G=zeros(21,21);
+for i=1:21
+    G(i,i)=2;
+end
+for i=2:20
+    G(i,i-1)=u(i-1);
+    G(i,i+1)=r(i-1);
+end
+G(21,20)=1;
+G(1,2)=1;
+d=zeros(1,21);
+for i=2:20
+    d(i)=6*((y(i+1)-y(i))/h(i)-(y(i)-y(i-1))/h(i-1))/(h(i)+h(i-1));
+end
+syms u v;
+u=diff(sin(pi*v),v);
+a=subs(u,v,x(1));
+b=0;
+n=21
+d(1)=((y(2)-y(1))/h(1)-a)/h(1)*6;
+d(n)=(b-(y(n)-y(n-1))/h(n-1))/h(n-1)*6;
+d=d';
+M=inv(G)*d;
+for i=1:n-1
+    s(i)=M(i)*(x(i+1)-z)^3/0.6+M(i+1)*(z-x(i))^3/0.6+(y(i)-M(i)*0.01/6)*(x(i+1)-z)/0.1+(y(i+1)-M(i+1)*0.01/6)*(z-x(i))/0.1;
+end
+for i=1:n-1
+    a=[x(i):0.01:x(i+1)];
+    f=subs(s(i),z,a);
+    plot(a,f,'-- r')
+    hold on
+end
+
+title('分段函数的20次三次自然样条插值');
+legend('原函数','三次自然样条插值');
+```
