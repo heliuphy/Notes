@@ -3,9 +3,9 @@
 [第1章 开始](https://github.com/heliuphy/Notes/blob/master/Cpp/CppPrimer/CppPrimer-Chap1.md)
 
 ## 第I部分 C++基础
-[第2章 变量和基本类型](https://github.com/heliuphy/Notes/blob/master/CppPrimer/CppPrimer-Chap2.md)
+[第2章 变量和基本类型](https://github.com/heliuphy/Notes/blob/master/Cpp/CppPrimer/CppPrimer-Chap2.md)
 
-[第3章 字符串、向量和数组](https://github.com/heliuphy/Notes/blob/master/Cpp/CppPrimer/CppPrimer-Chap1.md)
+[第3章 字符串、向量和数组](https://github.com/heliuphy/Notes/blob/master/Cpp/CppPrimer/CppPrimer-Chap3.md)
 
 [第7章 类](https://github.com/heliuphy/Notes/blob/master/Cpp/CppPrimer/CppPrimer-Chap7.md)
 
